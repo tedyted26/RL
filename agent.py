@@ -1,5 +1,7 @@
+import random
 import numpy as np
 import torch as T
+import torch.nn.functional as F
 
 from nn import BNN
 
@@ -25,10 +27,8 @@ class Agent():
 		self.epsilon_min = epsilon_min
 
 		self.Q = BNN(self.alpha, self.num_state, self.num_actions)
-
-		# self.soft_policy = lambda q_values: torch.softmax(q_values, dim=-1)
 		
-	def update(self, prev_state, next_state, reward, prev_action, next_action):
+	def update(self, prev_state, prev_action, reward, next_state, next_action):
 		"""
 		Update the action value function using the Expected SARSA update.
 		Q(S, A) = Q(S, A) + alpha(reward + (pi * Q(S_, A_) - Q(S, A))
@@ -43,25 +43,35 @@ class Agent():
 		"""
 		# Turn the numpy arrays into pytorch tensors
 		self.Q.optimizer.zero_grad()
-		prev_states = T.tensor(prev_state, dtype = T.float).to(self.Q.device)
-		prev_actions = T.tensor(prev_action).to(self.Q.device)
-		rewards = T.tensor(reward).to(self.Q.device)
-		next_states = T.tensor(next_state, dtype = T.float).to(self.Q.device)
-		next_actions = T.tensor(next_action).to(self.Q.device)
+		prev_states = T.as_tensor(prev_state, dtype = T.float32).to(self.Q.device)
+		prev_actions = T.as_tensor(prev_action, dtype=T.int64).unsqueeze(-1).to(self.Q.device)
+		rewards = T.as_tensor(reward).unsqueeze(-1).to(self.Q.device)
+		next_states = T.as_tensor(next_state, dtype = T.float).to(self.Q.device)
+		next_actions = T.as_tensor(next_action).unsqueeze(-1).to(self.Q.device)
 
-		# Q(S,A) for the selected a 
-		q_pred = self.Q.forward(prev_states.flatten())[prev_actions]
+		# Q(S,A) for all 4 env, all actions
+		q_pred_all = self.Q(prev_states)
+		# Q(S,A) for all 4 env, only prev_actions
+		q_pred = T.gather(q_pred_all, dim=1, index=prev_actions)
 
-		# Q(S_,A_) for each action
-		q_next = self.Q.forward(next_states.flatten()) # check this step
+		# Q(S_,A_) for all 4 env, all actions
+		q_next_all = self.Q(next_states)
 
-		# Expected Q value based on the current policy
-		best_next_action = T.argmax(q_next, dim=0, keepdim=True)
-		best_q_next = q_next.gather(0, best_next_action).squeeze(-1)
-		expected_q_next = self.epsilon * q_next.mean(dim=0) + (1 - self.epsilon) * best_q_next
+		expected_q_next_all = []
+		for environment in range(len(q_next_all)):
+			expected_q_next = 0
+			for a in range(len(q_next_all[environment])): 
+				# change this line to be pi(a_) * q(S_,a_)
+				expected_q_next += self.epsilon * q_next_all[environment][a]
+			expected_q_next_all.append(expected_q_next)
+		# Expected Q value based on the current policy (for now just epsilon greedy)
+		
+			# best_next_action = T.argmax(q_next_all[environment], dim=0, keepdim=True)
+			# best_q_next = q_next_all[environment].gather(0, best_next_action).squeeze(-1)
+			# expected_q_next = self.epsilon * q_next_all[environment].mean(dim=0) + (1 - self.epsilon) * best_q_next
 
 
-		q_target = reward + self.gamma * expected_q_next 
+		q_target = rewards + self.gamma * T.stack(expected_q_next_all) 
 		
 		loss = self.Q.loss(q_target, q_pred).to(self.Q.device)
 		loss.backward()
@@ -69,17 +79,25 @@ class Agent():
 		self.decrement_epsilon()
 
 	
-	def choose_action(self, observation): 
-		observation = observation.flatten()  # Flatten the observation
-		if np.random.random() > self.epsilon:
-			state = T.tensor([observation], dtype=T.float).to(self.Q.device)
-			actions = self.Q.forward(state)
-			action = T.argmax(actions).item()
-		else:
-			action = self.action_space.sample()
-		return action
+	def choose_action(self, observations): 
+		actions = []
+		observations_t = T.as_tensor(observations, dtype = T.float32)
+		with T.no_grad():
+			action_probs = self.Q(observations_t) # Q values
 
+			max_q_indices = T.argmax(action_probs, dim=1)
+			actions = max_q_indices.detach().tolist()
+			# action = T.multinomial(action_probs, 1).squeeze()
+
+			for i in range(len(actions)):
+				rnd_sample = random.random()
+				if rnd_sample <= self.epsilon:
+					actions[i] = random.randint(0, self.num_actions - 1)
+		
+		return actions
+	
 	def decrement_epsilon(self):
 		self.epsilon = self.epsilon - self.epsilon_dec \
 						if self.epsilon > self.epsilon_min else self.epsilon_min
+		
 		
