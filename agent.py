@@ -68,9 +68,9 @@ class Agent():
 				expected_q_next += actions_softmax[environment][a] * q_next_all[environment][a]
 			expected_q_next_all.append(expected_q_next)
 
-		q_target = rewards + self.gamma * T.stack(expected_q_next_all).unsqueeze(-1) 
+		q_target = rewards + self.gamma * T.stack(expected_q_next_all)
 		
-		loss = self.Q.loss(q_target, q_pred).to(self.Q.device)
+		loss = self.Q.loss(q_target.unsqueeze(-1), q_pred).to(self.Q.device)
 		loss.backward()
 		self.Q.optimizer.step()
 		self.decrement_epsilon()

@@ -51,6 +51,8 @@ for i in range(total_episodes):
 
             if done:
                 ep_infos.append(info['episode'])
+                t = max_steps
+                break
 
         states1 = states2 
         actions1 = actions2 
@@ -65,11 +67,15 @@ for i in range(total_episodes):
     
     totalReward.append(episodeReward)
 
-    rew_mean = np.mean([e['r'] for e in ep_infos]) or 0
-    len_mean = np.mean([e['l'] for e in ep_infos]) or 0
+    if len(ep_infos) == 0:
+        rew_mean = 0
+    else: 
+        rew_mean = np.mean([e['r'] for e in ep_infos])
+    
     print()
-    print('Reward mean:', rew_mean)
     print('Episode: ', i) 
+    print('Reward mean:', rew_mean)
+    
 
 env.close()
 
