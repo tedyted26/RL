@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from nn import BNN
 
 class Agent():
-	def __init__(self, observation_space, action_space, alpha, gamma=0.99, epsilon=1.0, epsilon_dec=1e-5, epsilon_min=0.01):
+	def __init__(self, observation_space, action_space, alpha, gamma=0.99):
 		"""
 		Constructor
 		Args:
@@ -22,9 +22,6 @@ class Agent():
 		self.action_space = action_space
 		self.alpha = alpha
 		self.gamma = gamma
-		self.epsilon = epsilon
-		self.epsilon_dec = epsilon_dec
-		self.epsilon_min = epsilon_min
 
 		self.Q = BNN(self.alpha, self.observation_space, self.num_actions)
 		
@@ -73,7 +70,6 @@ class Agent():
 		loss = self.Q.loss(q_target.unsqueeze(-1), q_pred).to(self.Q.device)
 		loss.backward()
 		self.Q.optimizer.step()
-		self.decrement_epsilon()
 
 	
 	def choose_action(self, observations): 
@@ -86,8 +82,5 @@ class Agent():
 		
 		return sampled_actions
 	
-	def decrement_epsilon(self):
-		self.epsilon = self.epsilon - self.epsilon_dec \
-						if self.epsilon > self.epsilon_min else self.epsilon_min
 		
 		

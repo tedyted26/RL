@@ -45,10 +45,6 @@ class BNN(nn.Module):
         self.to(self.device)
 
     def forward(self, x):
-        # x = F.relu(self.layer1(x))
-        # x = F.relu(self.layer2(x))
-        # #return F.softmax(x, dim=-1)
-        # return self.layer3(x)
         x = self.conv(x)
         x = self.lin(x)
         return x
