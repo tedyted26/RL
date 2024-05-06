@@ -15,10 +15,7 @@ max_steps = 100
 alpha = 0.5
 gamma = 1
 NUM_ENVS = 4 
-"""
-	The two parameters below is used to calculate
-	the reward by each algorithm
-"""
+
 episodeReward = 0
 totalReward = []
 ep_infos = deque([], maxlen=100)
@@ -81,7 +78,12 @@ env.close()
 
 # Calculate the mean of sum of returns for each episode
 meanReturn = np.mean(totalReward)
-	
+
+plt.plot(range(total_episodes), totalReward)
+plt.xlabel('Episode')
+plt.ylabel('Mean Reward')
+plt.title('Mean Reward per Episode')
+plt.savefig('mean_reward_per_episode.png')	
 
 # Print the results
 print(f"Expected Sarsa Average Sum of Return: {meanReturn}")
