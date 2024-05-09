@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from nn import BNN
 
 class Agent():
-	def __init__(self, observation_space, action_space, alpha, gamma=0.99):
+	def __init__(self, network, alpha, gamma=0.99):
 		"""
 		Constructor
 		Args:
@@ -17,14 +17,11 @@ class Agent():
 			gamma: The discount factor
 			epsilon: The degree of exploration
 		"""
-		self.observation_space = observation_space
-		self.num_actions = action_space.n
-		self.action_space = action_space
 		self.alpha = alpha
 		self.gamma = gamma
 		self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
-		self.Q = BNN(self.alpha, self.observation_space, self.num_actions, self.device)
+		self.Q = network.to(self.device)
 		
 	def update(self, prev_state, prev_action, reward, next_state, next_action):
 		"""

@@ -7,6 +7,7 @@ from agent import Agent
 from baselines_wrappers.dummy_vec_env import DummyVecEnv
 from baselines_wrappers.monitor import Monitor
 from baselines_wrappers.subproc_vec_env import SubprocVecEnv
+from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
@@ -25,8 +26,8 @@ make_env = lambda: Monitor(make_atari_deepmind('ALE/Breakout-v5'), None, allow_e
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 #env = SubprocVecEnv([make_env for _ in NUM_ENVS]) # For paralelism
 
-agent = Agent(
-	env.observation_space, env.action_space, alpha, gamma)
+network = BNN(alpha, env.observation_space, env.action_space.n)
+agent = Agent(network, alpha, gamma)
 
 for i in range(total_episodes):
   
