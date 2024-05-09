@@ -22,8 +22,9 @@ class Agent():
 		self.action_space = action_space
 		self.alpha = alpha
 		self.gamma = gamma
+		self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
-		self.Q = BNN(self.alpha, self.observation_space, self.num_actions)
+		self.Q = BNN(self.alpha, self.observation_space, self.num_actions, self.device)
 		
 	def update(self, prev_state, prev_action, reward, next_state, next_action):
 		"""
@@ -40,11 +41,11 @@ class Agent():
 		"""
 		# Turn the numpy arrays into pytorch tensors
 		self.Q.optimizer.zero_grad()
-		prev_states = T.as_tensor(prev_state, dtype = T.float32).to(self.Q.device)
-		prev_actions = T.as_tensor(prev_action, dtype=T.int64).to(self.Q.device)
-		rewards = T.as_tensor(reward).to(self.Q.device)
-		next_states = T.as_tensor(next_state, dtype = T.float).to(self.Q.device)
-		next_actions = T.as_tensor(next_action).to(self.Q.device)
+		prev_states = T.as_tensor(prev_state, dtype = T.float32).to(self.device)
+		prev_actions = T.as_tensor(prev_action, dtype=T.int64).to(self.device)
+		rewards = T.as_tensor(reward).to(self.device)
+		next_states = T.as_tensor(next_state, dtype = T.float).to(self.device)
+		next_actions = T.as_tensor(next_action).to(self.device)
 
 		# Q(S,A) for all 4 env, all actions
 		q_pred_all = self.Q(prev_states)
@@ -67,13 +68,13 @@ class Agent():
 
 		q_target = rewards + self.gamma * T.stack(expected_q_next_all)
 		
-		loss = self.Q.loss(q_target.unsqueeze(-1), q_pred).to(self.Q.device)
+		loss = self.Q.loss(q_target.unsqueeze(-1), q_pred).to(self.device)
 		loss.backward()
 		self.Q.optimizer.step()
 
 	
 	def choose_action(self, observations): 
-		observations_t = T.as_tensor(observations, dtype = T.float32)
+		observations_t = T.as_tensor(observations, dtype = T.float32).to(self.device)
 		with T.no_grad():
 			action_probs = self.Q(observations_t) # Q values
 

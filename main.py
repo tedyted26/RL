@@ -25,8 +25,6 @@ make_env = lambda: Monitor(make_atari_deepmind('ALE/Breakout-v5'), None, allow_e
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 #env = SubprocVecEnv([make_env for _ in NUM_ENVS]) # For paralelism
 
-#env = make_atari_deepmind('ALE/Breakout-v5')
-
 agent = Agent(
 	env.observation_space, env.action_space, alpha, gamma)
 

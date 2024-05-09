@@ -8,9 +8,8 @@ from blitz.utils import variational_estimator
 
 class BNN(nn.Module):
 
-    def __init__(self, lr, observation_space, n_actions):
+    def __init__(self, lr, observation_space, n_actions, device):
         super(BNN, self).__init__()
-        n_input_channels = observation_space.shape[0]
 
         self.conv = nn.Sequential(
             # nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4),
@@ -21,7 +20,7 @@ class BNN(nn.Module):
             # nn.ReLU(),
             # nn.Flatten(),
             
-            BayesianConv2d(n_input_channels, 32, (8, 8), stride=4),
+            BayesianConv2d(observation_space.num_envs, 32, (8, 8), stride=4),
             nn.ReLU(),
             BayesianConv2d(32, 64, (4, 4), stride=2),
             nn.ReLU(),
@@ -41,8 +40,7 @@ class BNN(nn.Module):
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.KLDivLoss()
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
-        self.to(self.device)
+        self.to(device)
 
     def forward(self, x):
         x = self.conv(x)
