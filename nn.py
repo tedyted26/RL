@@ -11,14 +11,22 @@ class BNN(nn.Module):
     def __init__(self, lr, observation_space, n_actions):
         super(BNN, self).__init__()
 
-        self.conv = nn.Sequential(                  
-            BayesianConv2d(observation_space.shape[0], 32, (8, 8), stride=4),
+        self.conv = nn.Sequential(    
+            nn.Conv2d(observation_space.shape[0], 32, (8, 8), stride=4),
             nn.ReLU(),
-            BayesianConv2d(32, 64, (4, 4), stride=2),
+            nn.Conv2d(32, 64, (4, 4), stride=2),
             nn.ReLU(),
-            BayesianConv2d(64, 64, (3, 3), stride=1),
+            nn.Conv2d(64, 64, (3, 3), stride=1),
             nn.ReLU(),
-            nn.Flatten(),        
+            nn.Flatten(),  
+
+            # BayesianConv2d(observation_space.shape[0], 32, (8, 8), stride=4),
+            # nn.ReLU(),
+            # BayesianConv2d(32, 64, (4, 4), stride=2),
+            # nn.ReLU(),
+            # BayesianConv2d(64, 64, (3, 3), stride=1),
+            # nn.ReLU(),
+            # nn.Flatten(),        
         )
 
         with T.no_grad():
@@ -28,9 +36,12 @@ class BNN(nn.Module):
             n_input = self.conv(sample_input).view(1, -1).shape[1]
 
         self.lin = nn.Sequential(
-            BayesianLinear(n_input, 512), 
-            nn.ReLU(),
-            BayesianLinear(512, n_actions)
+            # BayesianLinear(n_input, 512), 
+            # nn.ReLU(),
+            # BayesianLinear(512, n_actions)
+            # nn.Linear(n_input, 512), 
+            # nn.ReLU(),
+            # nn.Linear(512, n_actions)
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr)

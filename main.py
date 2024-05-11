@@ -13,15 +13,15 @@ from wrappers import make_atari_deepmind
 
 if __name__ == '__main__':
     # Defining all the required parameters
-    total_episodes = 500
+    total_episodes = 800
     max_steps = 100
     alpha = 0.5
-    gamma = 1
+    gamma = 0.9
     NUM_ENVS = 4 
 
     episodeReward = 0
     totalReward = []
-    ep_infos = deque([], maxlen=100)
+    ep_infos = []
 
     # Using the gym library to create the environment
     make_env = lambda: Monitor(make_atari_deepmind('ALE/Breakout-v5'), None, allow_early_resets = True)
@@ -44,12 +44,11 @@ if __name__ == '__main__':
             for state, action, reward, done, state2, action2, info in zip(states1, actions1, rewards, dones, states2, actions2, infos):       
                 data.append((state, action, reward, state2, action2))
                 episodeReward += reward
-
+                print(info)
                 if done:
                     print('-------done')
                     ep_infos.append(info['episode'])
                     t = max_steps
-                    break
 
             states1 = states2 
             actions1 = actions2  
@@ -76,7 +75,7 @@ if __name__ == '__main__':
         print()
         print('Episode: ', episode_count, 'with steps: ', t) 
         print('Reward mean:', rew_mean)
-        print('Total reward mean:', np.mean(totalReward))
+        print('Episode reward:', episodeReward)
         
 
     env.close()
