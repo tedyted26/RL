@@ -38,16 +38,15 @@ class Agent():
 		"""
 		# Turn the numpy arrays into pytorch tensors
 		self.Q.optimizer.zero_grad()
-		prev_states = T.as_tensor(prev_state, dtype = T.float32).to(self.device)
+		prev_states = T.as_tensor(np.array(prev_state), dtype = T.float32).to(self.device)
 		prev_actions = T.as_tensor(prev_action, dtype=T.int64).to(self.device)
 		rewards = T.as_tensor(reward).to(self.device)
-		next_states = T.as_tensor(next_state, dtype = T.float).to(self.device)
-		next_actions = T.as_tensor(next_action).to(self.device)
+		next_states = T.as_tensor(np.array(next_state), dtype = T.float).to(self.device)
 
 		# Q(S,A) for all 4 env, all actions
 		q_pred_all = self.Q(prev_states)
 		# Q(S,A) for all 4 env, only prev_actions
-		q_pred = T.gather(q_pred_all, dim=1, index=prev_actions)
+		q_pred = T.gather(q_pred_all, dim=1, index=prev_actions.unsqueeze(0))
 
 		# Q(S_,A_) for all 4 env, all actions
 		q_next_all = self.Q(next_states)
@@ -65,7 +64,7 @@ class Agent():
 
 		q_target = rewards + self.gamma * T.stack(expected_q_next_all)
 		
-		loss = self.Q.loss(q_target.unsqueeze(-1), q_pred).to(self.device)
+		loss = self.Q.loss(q_target.unsqueeze(0), q_pred).to(self.device)
 		loss.backward()
 		self.Q.optimizer.step()
 

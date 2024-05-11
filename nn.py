@@ -11,15 +11,14 @@ class BNN(nn.Module):
     def __init__(self, lr, observation_space, n_actions):
         super(BNN, self).__init__()
 
-        self.conv = nn.Sequential(           
+        self.conv = nn.Sequential(                  
             BayesianConv2d(observation_space.shape[0], 32, (8, 8), stride=4),
             nn.ReLU(),
             BayesianConv2d(32, 64, (4, 4), stride=2),
             nn.ReLU(),
             BayesianConv2d(64, 64, (3, 3), stride=1),
             nn.ReLU(),
-            nn.Flatten(),
-            
+            nn.Flatten(),        
         )
 
         with T.no_grad():
@@ -35,7 +34,7 @@ class BNN(nn.Module):
         )
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
-        self.loss = nn.KLDivLoss()
+        self.loss = nn.MSELoss()
 
     def forward(self, x):
         x = self.conv(x)
