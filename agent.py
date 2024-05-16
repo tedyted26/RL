@@ -2,11 +2,12 @@ import random
 import numpy as np
 import torch as T
 import torch.nn.functional as F
-
-from nn import BNN
+import torch.nn as nn
+import torchbnn as bnn
+import torch.optim as optim
 
 class Agent():
-	def __init__(self, network, alpha, gamma=0.99):
+	def __init__(self, network, alpha, gamma=0.99, lr=0.01):
 		"""
 		Constructor
 		Args:
@@ -22,6 +23,12 @@ class Agent():
 		self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
 
 		self.Q = network.to(self.device)
+
+		self.mse_loss = nn.MSELoss()
+		self.kl_loss = bnn.BKLLoss(reduction='mean', last_layer_only=False)
+		self.kl_weight = 0.01
+		self.optimizer = optim.Adam(self.Q.parameters(), lr=lr)
+		self.loss = nn.MSELoss()
 		
 	def update(self, prev_state, prev_action, reward, next_state, next_action):
 		"""
@@ -37,7 +44,7 @@ class Agent():
 			None
 		"""
 		# Turn the numpy arrays into pytorch tensors
-		self.Q.optimizer.zero_grad()
+		self.optimizer.zero_grad()
 		prev_states = T.as_tensor(np.array(prev_state), dtype = T.float32).to(self.device)
 		prev_actions = T.as_tensor(prev_action, dtype=T.int64).to(self.device)
 		rewards = T.as_tensor(reward).to(self.device)
@@ -64,9 +71,12 @@ class Agent():
 
 		q_target = rewards + self.gamma * T.stack(expected_q_next_all)
 		
-		loss = self.Q.loss(q_target.unsqueeze(0), q_pred).to(self.device)
-		loss.backward()
-		self.Q.optimizer.step()
+		mse_loss = self.mse_loss(q_target.unsqueeze(0), q_pred).to(self.device)
+		kl_loss = self.kl_loss(self.Q)
+		cost = mse_loss + self.kl_weight*kl_loss
+
+		cost.backward()
+		self.optimizer.step()
 
 	
 	def choose_action(self, observations): 
