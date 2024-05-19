@@ -7,7 +7,7 @@ import torchbnn as bnn
 import torch.optim as optim
 
 class Agent():
-	def __init__(self, network, alpha, gamma=0.99, lr=0.01):
+	def __init__(self, network, alpha, gamma=0.99, lr=0.01, kl_weight=0.01):
 		"""
 		Constructor
 		Args:
@@ -26,7 +26,7 @@ class Agent():
 
 		self.mse_loss = nn.MSELoss()
 		self.kl_loss = bnn.BKLLoss(reduction='mean', last_layer_only=False)
-		self.kl_weight = 0.01
+		self.kl_weight = kl_weight
 		self.optimizer = optim.Adam(self.Q.parameters(), lr=lr)
 		self.loss = nn.MSELoss()
 		
@@ -72,11 +72,13 @@ class Agent():
 		q_target = rewards + self.gamma * T.stack(expected_q_next_all)
 		
 		mse_loss = self.mse_loss(q_target.unsqueeze(0), q_pred).to(self.device)
-		kl_loss = self.kl_loss(self.Q)
+		kl_loss = self.kl_loss(self.Q).to(self.device)
 		cost = mse_loss + self.kl_weight*kl_loss
 
 		cost.backward()
 		self.optimizer.step()
+
+		return cost
 
 	
 	def choose_action(self, observations): 

@@ -13,7 +13,10 @@ def make_atari_deepmind(env_id, max_episode_steps=None, scale_values=False, clip
     env = gym.make(env_id)
     env = NoopResetEnv(env, noop_max=30)
 
+    print(env.spec)
+
     if 'NoFrameskip' in env.spec.id:
+        print("im noframeskip")
         env = MaxAndSkipEnv(env, skip=4)
 
     if max_episode_steps is not None:
@@ -24,9 +27,11 @@ def make_atari_deepmind(env_id, max_episode_steps=None, scale_values=False, clip
     env = WarpFrame(env)
 
     if scale_values:
+        print("im scaling")
         env = ScaledFloatFrame(env)
 
     if clip_rewards:
+        print("im clipping")
         env = ClipRewardEnv(env)
 
     env = TransposeImageObs(env, op=[2, 0, 1])  # Convert to torch order (C, H, W)
