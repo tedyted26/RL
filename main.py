@@ -1,6 +1,3 @@
-from collections import deque
-import itertools
-import gym
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -11,23 +8,28 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 10
-total_episodes = 50000
+n_experiments = 1
+total_episodes = 1000 #5000
 max_steps = 10000
-alpha = 0.5
+# 0.1 - 0.01 - 0.001
+alpha = 0.1
+# 0.9 - 0.95 - 0.99
 gamma = 0.9
-lr= 0.01 # probar con 1e-4
+# 80 mean at episode 8500 with 0.0001
+# 0.001 - 0.0001 - 0.00025
+lr= 0.001
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
 make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps, scale_values=True), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 
-for ex in range(n_experiments-1):
+for ex in range(n_experiments):
     network = BNN(env.observation_space, env.action_space.n)
     agent = Agent(network, alpha, gamma, lr)
 
     cost = []
+    ep_infos = []
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
     total_cost_matrix = np.zeros((n_experiments, total_episodes))
@@ -37,7 +39,6 @@ for ex in range(n_experiments-1):
         data = []
         states1, _ = env.reset() 
         actions1 = agent.choose_action(states1)
-        ep_infos = deque([], maxlen=100)
         t = 1
         while t < max_steps:
 
