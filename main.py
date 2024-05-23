@@ -1,3 +1,4 @@
+from collections import deque
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -8,11 +9,11 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 1
+n_experiments = 5
 total_episodes = 1000 #5000
 max_steps = 10000
 # 0.1 - 0.01 - 0.001
-alpha = 0.1
+alpha = 0.01
 # 0.9 - 0.95 - 0.99
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
@@ -21,7 +22,7 @@ lr= 0.001
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
-make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps, scale_values=True), None, allow_early_resets = True)
+make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 
 for ex in range(n_experiments):
@@ -29,7 +30,7 @@ for ex in range(n_experiments):
     agent = Agent(network, alpha, gamma, lr)
 
     cost = []
-    ep_infos = []
+    ep_infos = deque([], 100)
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
     total_cost_matrix = np.zeros((n_experiments, total_episodes))
@@ -71,16 +72,18 @@ for ex in range(n_experiments):
 
         if len(ep_infos) == 0:
             rew_mean = 0
+            t_mean = 0
         else: 
             rew_mean = np.sum([e['r'] for e in ep_infos])
+            t_mean = np.sum([e['l'] for e in ep_infos])
     
         total_reward_matrix[ex, episode_count] = rew_mean
         total_cost_matrix[ex,episode_count] = np.mean(cost)
 
         print()
         print('Experiment: ', ex+1, '/', n_experiments)
-        print('Episode: ', episode_count, 'with steps: ', t) 
-        print('Reward mean last 100 steps: ', rew_mean)   
+        print('Episode: ', episode_count, 'with steps: ', t_mean) 
+        print('Reward mean total: ', rew_mean)   
 
 env.close()
 
@@ -92,9 +95,9 @@ plt.plot(range(total_episodes), mean_rewards, linewidth=1, label='Mean Reward')
 plt.fill_between(range(total_episodes), mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
 plt.xlabel('Episode')
 plt.ylabel('Mean Reward')
-plt.title('Mean Reward per Episode with Error Band')
+plt.title('Mean Reward per Episode')
 plt.legend()
-plt.savefig('mean_reward_per_episode_with_error.png')
+plt.savefig('mean_reward.png')
 
 # Plot the learning curve with shaded error bands for mean cost
 plt.figure()
@@ -104,6 +107,6 @@ plt.plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
 plt.fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
 plt.xlabel('Episode')
 plt.ylabel('Mean Cost')
-plt.title('Mean Cost per Episode with Error Band')
+plt.title('Mean Cost per Episode')
 plt.legend()
-plt.savefig('mean_cost_per_episode_with_error.png')
+plt.savefig('mean_cost.png')
