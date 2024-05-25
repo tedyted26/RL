@@ -33,6 +33,7 @@ for ex in range(n_experiments):
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
     total_cost_matrix = np.zeros((n_experiments, total_episodes))
+    total_lenght_matrix = np.zeros((n_experiments, total_episodes))
 
     for episode_count in range(total_episodes):
         # Collect data
@@ -71,22 +72,22 @@ for ex in range(n_experiments):
 
         if len(ep_infos) == 0:
             rew_mean = 0
-            t_mean = 0
+            lenght_mean = 0
         else: 
             rew_mean = np.sum([e['r'] for e in ep_infos])
-            t_mean = np.sum([e['l'] for e in ep_infos])
+            lenght_mean = np.sum([e['l'] for e in ep_infos])
     
         total_reward_matrix[ex, episode_count] = rew_mean
         total_cost_matrix[ex,episode_count] = np.mean(cost)
+        total_lenght_matrix[ex,episode_count] = lenght_mean
 
         print()
         print('Experiment: ', ex+1, '/', n_experiments)
-        print('Episode: ', episode_count, 'with steps: ', t_mean) 
+        print('Episode: ', episode_count, 'with steps: ', ep_infos[-1]['l']) 
         print('Reward mean total: ', rew_mean)   
 
 env.close()
 
-# Plot the learning curve with shaded error bands for mean rewards
 plt.figure()
 mean_rewards = np.mean(total_reward_matrix, axis=0)
 std_rewards = np.std(total_reward_matrix, axis=0)
@@ -98,12 +99,22 @@ plt.title('Mean Reward per Episode')
 plt.legend()
 plt.savefig('mean_reward.png')
 
-# Plot the learning curve with shaded error bands for mean cost
 plt.figure()
 mean_costs = np.mean(total_cost_matrix, axis=0)
 std_costs = np.std(total_cost_matrix, axis=0)
 plt.plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
 plt.fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
+plt.xlabel('Episode')
+plt.ylabel('Mean Cost')
+plt.title('Mean Cost per Episode')
+plt.legend()
+plt.savefig('mean_cost.png')
+
+plt.figure()
+mean_lengths = np.mean(total_lenght_matrix, axis=0)
+std_lenghts = np.std(total_lenght_matrix, axis=0)
+plt.plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Cost')
+plt.fill_between(range(total_episodes), mean_lengths - std_lenghts, mean_lengths + std_lenghts, alpha=0.2)
 plt.xlabel('Episode')
 plt.ylabel('Mean Cost')
 plt.title('Mean Cost per Episode')
