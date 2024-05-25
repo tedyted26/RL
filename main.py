@@ -1,4 +1,3 @@
-from collections import deque
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -9,8 +8,8 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 5
-total_episodes = 1000 #5000
+n_experiments = 2
+total_episodes = 3000 #5000
 max_steps = 10000
 # 0.1 - 0.01 - 0.001
 alpha = 0.01
@@ -18,7 +17,7 @@ alpha = 0.01
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.001
+lr= 0.0001
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -30,7 +29,7 @@ for ex in range(n_experiments):
     agent = Agent(network, alpha, gamma, lr)
 
     cost = []
-    ep_infos = deque([], 100)
+    ep_infos = []
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
     total_cost_matrix = np.zeros((n_experiments, total_episodes))
