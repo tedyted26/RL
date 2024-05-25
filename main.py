@@ -17,7 +17,7 @@ alpha = 0.01
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.0001
+lr= 0.00025
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
