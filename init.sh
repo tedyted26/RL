@@ -13,3 +13,6 @@ pip install opencv-python
 pip install numpy==1.23.1
 
 #Use 1.85.2 coder
+
+git config --global user.email tedyted26@hotmail.com
+git config --global user.name Teodora
