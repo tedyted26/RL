@@ -8,8 +8,8 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 2
-total_episodes = 3000 #5000
+n_experiments = 5
+total_episodes = 5000 #5000
 max_steps = 10000
 # 0.1 - 0.01 - 0.001
 alpha = 0.01
@@ -17,7 +17,7 @@ alpha = 0.01
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.0001
+lr= 0.00025
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -67,7 +67,7 @@ for ex in range(n_experiments):
             
             # Call the update function with the grouped data
             c = agent.update(states, actions, rewards, next_states, next_actions)
-            cost.append(c.detach().numpy())
+            cost.append(c.cpu().detach().numpy())
 
         if len(ep_infos) == 0:
             rew_mean = 0
