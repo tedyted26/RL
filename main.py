@@ -8,16 +8,17 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 2
-total_episodes = 3000 #5000
-max_steps = 10000
+n_experiments = 5
+total_episodes = 1000 #5000
+# 10 000 - 1 000 - 100
+max_steps = 1000
 # 0.1 - 0.01 - 0.001
 alpha = 0.01
 # 0.9 - 0.95 - 0.99
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.00025
+lr= 0.001
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -88,35 +89,36 @@ for ex in range(n_experiments):
 
 env.close()
 
-plt.figure()
 mean_rewards = np.mean(total_reward_matrix, axis=0)
 std_rewards = np.std(total_reward_matrix, axis=0)
-plt.plot(range(total_episodes), mean_rewards, linewidth=1, label='Mean Reward')
-plt.fill_between(range(total_episodes), mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
-plt.xlabel('Episode')
-plt.ylabel('Mean Reward')
-plt.title('Mean Reward per Episode')
-plt.legend()
-plt.savefig('mean_reward.png')
-
-plt.figure()
 mean_costs = np.mean(total_cost_matrix, axis=0)
 std_costs = np.std(total_cost_matrix, axis=0)
-plt.plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
-plt.fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
-plt.xlabel('Episode')
-plt.ylabel('Mean Cost')
-plt.title('Mean Cost per Episode')
-plt.legend()
-plt.savefig('mean_cost.png')
-
-plt.figure()
 mean_lengths = np.mean(total_lenght_matrix, axis=0)
-std_lenghts = np.std(total_lenght_matrix, axis=0)
-plt.plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Cost')
-plt.fill_between(range(total_episodes), mean_lengths - std_lenghts, mean_lengths + std_lenghts, alpha=0.2)
-plt.xlabel('Episode')
-plt.ylabel('Mean Cost')
-plt.title('Mean Cost per Episode')
-plt.legend()
-plt.savefig('mean_cost.png')
+std_lengths = np.std(total_lenght_matrix, axis=0)
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+
+axes[0].plot(range(total_episodes), mean_rewards, linewidth=1, label='Mean Reward')
+axes[0].fill_between(range(total_episodes), mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
+axes[0].set_xlabel('Episode')
+axes[0].set_ylabel('Mean Reward')
+axes[0].set_title('Mean Reward per Episode')
+axes[0].legend()
+
+axes[1].plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
+axes[1].fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
+axes[1].set_xlabel('Episode')
+axes[1].set_ylabel('Mean Cost')
+axes[1].set_title('Mean Cost per Episode')
+axes[1].legend()
+
+axes[2].plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Length')
+axes[2].fill_between(range(total_episodes), mean_lengths - std_lengths, mean_lengths + std_lengths, alpha=0.2)
+axes[2].set_xlabel('Episode')
+axes[2].set_ylabel('Mean Length')
+axes[2].set_title('Mean Length per Episode')
+axes[2].legend()
+
+plt.tight_layout()
+
+plt.savefig('results.png')
