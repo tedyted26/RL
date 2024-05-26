@@ -9,15 +9,15 @@ from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
 n_experiments = 5
-total_episodes = 5000 #5000
+total_episodes = 1000 #5000
 max_steps = 10000
 # 0.1 - 0.01 - 0.001
-alpha = 0.01
+alpha = 0.1
 # 0.9 - 0.95 - 0.99
-gamma = 0.9
+gamma = 0.99
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.001
+lr= 0.00025
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -74,8 +74,8 @@ for ex in range(n_experiments):
             rew_mean = 0
             lenght_mean = 0
         else: 
-            rew_mean = np.sum([e['r'] for e in ep_infos])
-            lenght_mean = np.sum([e['l'] for e in ep_infos])
+            rew_mean = np.mean([e['r'] for e in ep_infos])
+            lenght_mean = np.mean([e['l'] for e in ep_infos])
     
         total_reward_matrix[ex, episode_count] = rew_mean
         total_cost_matrix[ex,episode_count] = np.mean(cost)
@@ -89,11 +89,11 @@ for ex in range(n_experiments):
 env.close()
 
 mean_rewards = np.mean(total_reward_matrix, axis=0)
-std_rewards = np.std(total_reward_matrix, axis=0)
+std_rewards = np.std(total_reward_matrix, axis=0) / np.sqrt(total_reward_matrix.shape[0])
 mean_costs = np.mean(total_cost_matrix, axis=0)
-std_costs = np.std(total_cost_matrix, axis=0)
+std_costs = np.std(total_cost_matrix, axis=0) / np.sqrt(total_cost_matrix.shape[0])
 mean_lengths = np.mean(total_lenght_matrix, axis=0)
-std_lengths = np.std(total_lenght_matrix, axis=0)
+std_lengths = np.std(total_lenght_matrix, axis=0) / np.sqrt(total_lenght_matrix.shape[0])
 
 fig, axes = plt.subplots(3, 1, figsize=(10, 15))
 
@@ -111,7 +111,7 @@ axes[1].set_ylabel('Mean Cost')
 axes[1].set_title('Mean Cost per Episode')
 axes[1].legend()
 
-axes[2].plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Length')
+axes[2].plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Length (timesteps)')
 axes[2].fill_between(range(total_episodes), mean_lengths - std_lengths, mean_lengths + std_lengths, alpha=0.2)
 axes[2].set_xlabel('Episode')
 axes[2].set_ylabel('Mean Length')
