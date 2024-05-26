@@ -17,11 +17,11 @@ alpha = 0.01
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.00025
+lr= 0.001
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
-make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
+make_env = lambda: Monitor(make_atari_deepmind('SpaceInvaders-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 
 for ex in range(n_experiments):
@@ -33,6 +33,7 @@ for ex in range(n_experiments):
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
     total_cost_matrix = np.zeros((n_experiments, total_episodes))
+    total_lenght_matrix = np.zeros((n_experiments, total_episodes))
 
     for episode_count in range(total_episodes):
         # Collect data
@@ -71,41 +72,52 @@ for ex in range(n_experiments):
 
         if len(ep_infos) == 0:
             rew_mean = 0
-            t_mean = 0
+            lenght_mean = 0
         else: 
             rew_mean = np.sum([e['r'] for e in ep_infos])
-            t_mean = np.sum([e['l'] for e in ep_infos])
+            lenght_mean = np.sum([e['l'] for e in ep_infos])
     
         total_reward_matrix[ex, episode_count] = rew_mean
         total_cost_matrix[ex,episode_count] = np.mean(cost)
+        total_lenght_matrix[ex,episode_count] = lenght_mean
 
         print()
         print('Experiment: ', ex+1, '/', n_experiments)
-        print('Episode: ', episode_count, 'with steps: ', t_mean) 
+        print('Episode: ', episode_count, 'with steps: ', ep_infos[-1]['l']) 
         print('Reward mean total: ', rew_mean)   
 
 env.close()
 
-# Plot the learning curve with shaded error bands for mean rewards
-plt.figure()
 mean_rewards = np.mean(total_reward_matrix, axis=0)
 std_rewards = np.std(total_reward_matrix, axis=0)
-plt.plot(range(total_episodes), mean_rewards, linewidth=1, label='Mean Reward')
-plt.fill_between(range(total_episodes), mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
-plt.xlabel('Episode')
-plt.ylabel('Mean Reward')
-plt.title('Mean Reward per Episode')
-plt.legend()
-plt.savefig('mean_reward.png')
-
-# Plot the learning curve with shaded error bands for mean cost
-plt.figure()
 mean_costs = np.mean(total_cost_matrix, axis=0)
 std_costs = np.std(total_cost_matrix, axis=0)
-plt.plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
-plt.fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
-plt.xlabel('Episode')
-plt.ylabel('Mean Cost')
-plt.title('Mean Cost per Episode')
-plt.legend()
-plt.savefig('mean_cost.png')
+mean_lengths = np.mean(total_lenght_matrix, axis=0)
+std_lengths = np.std(total_lenght_matrix, axis=0)
+
+fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+
+axes[0].plot(range(total_episodes), mean_rewards, linewidth=1, label='Mean Reward')
+axes[0].fill_between(range(total_episodes), mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
+axes[0].set_xlabel('Episode')
+axes[0].set_ylabel('Mean Reward')
+axes[0].set_title('Mean Reward per Episode')
+axes[0].legend()
+
+axes[1].plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
+axes[1].fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
+axes[1].set_xlabel('Episode')
+axes[1].set_ylabel('Mean Cost')
+axes[1].set_title('Mean Cost per Episode')
+axes[1].legend()
+
+axes[2].plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Length')
+axes[2].fill_between(range(total_episodes), mean_lengths - std_lengths, mean_lengths + std_lengths, alpha=0.2)
+axes[2].set_xlabel('Episode')
+axes[2].set_ylabel('Mean Length')
+axes[2].set_title('Mean Length per Episode')
+axes[2].legend()
+
+plt.tight_layout()
+
+plt.savefig('results.png')
