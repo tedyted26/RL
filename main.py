@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 
 from matplotlib import pyplot as plt
@@ -8,9 +9,10 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 2
-total_episodes = 10 #5000
-max_steps = 10000
+n_experiments = 1
+total_episodes = 50000 #5000
+max_steps = 1000
+n_environment_interactions = 100
 # 0.1 - 0.01 - 0.001
 alpha = 0.1
 # 0.9 - 0.95 - 0.99
@@ -29,36 +31,37 @@ for ex in range(n_experiments):
     agent = Agent(network, alpha, gamma, lr)
 
     cost = []
-    ep_infos = []
+    ep_infos = []  
+    ep_count = 0
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
     total_cost_matrix = np.zeros((n_experiments, total_episodes))
     total_lenght_matrix = np.zeros((n_experiments, total_episodes))
 
-    for episode_count in range(total_episodes):
-        # Collect data
+    while ep_count < total_episodes:
+        states1, _ = env.reset()
+        actions1 = [1, 1, 1, 1]
+        ep_done = False
         data = []
-        states1, _ = env.reset() 
-        actions1 = [1,1,1,1]
-        t = 1
-        while t < max_steps:
 
+        while not ep_done:
+            # Collect data    
             states2, rewards, dones, _, infos = env.step(actions1)  
             actions2 = agent.choose_action(states2)
             for state, action, reward, done, state2, action2, info in zip(states1, actions1, rewards, dones, states2, actions2, infos):       
                 data.append((state, action, reward, state2, action2))
                 
                 if done:
-                    print('-------done')
+                    print('-------done', ep_count)
                     ep_infos.append(info['episode'])
-                    t = max_steps
-                    break
+                    ep_done = done
+                    if ep_count >= total_episodes:
+                        break
+                    ep_count += 1
 
             states1 = states2 
-            actions1 = actions2  
-
-            t+=1          
-                
+            actions1 = actions2          
+                    
         # Train
         # Loop through data with a step size of 4
         for r in range(0, len(data), 4):
@@ -70,21 +73,18 @@ for ex in range(n_experiments):
             c = agent.update(states, actions, rewards, next_states, next_actions)
             cost.append(c.cpu().detach().numpy())
 
-        if len(ep_infos) == 0:
-            rew_mean = 0
-            lenght_mean = 0
-        else: 
-            rew_mean = np.mean([e['r'] for e in ep_infos])
-            print([e['r'] for e in ep_infos])
-            lenght_mean = np.mean([e['l'] for e in ep_infos])
-    
-        total_reward_matrix[ex, episode_count] = ep_infos[-1]['r']
-        total_cost_matrix[ex,episode_count] = np.mean(cost)
-        total_lenght_matrix[ex,episode_count] = ep_infos[-1]['l']
+        
+        rew_mean = np.mean([e['r'] for e in ep_infos])
+        print([e['r'] for e in ep_infos])
+        lenght_mean = np.mean([e['l'] for e in ep_infos])
+
+        total_reward_matrix[ex, ep_count-1] = ep_infos[-1]['r']
+        total_cost_matrix[ex,ep_count-1] = np.mean(cost)
+        total_lenght_matrix[ex,ep_count-1] = ep_infos[-1]['l']
 
         print()
         print('Experiment: ', ex+1, '/', n_experiments)
-        print('Episode: ', episode_count, 'with steps: ', ep_infos[-1]['l']) 
+        print('Episode: ', ep_count, 'with steps: ', ep_infos[-1]['l']) 
         print('Reward mean total: ', rew_mean)   
 
 env.close()
