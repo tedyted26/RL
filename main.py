@@ -8,8 +8,8 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 5
-total_episodes = 1000 #5000
+n_experiments = 2
+total_episodes = 10 #5000
 max_steps = 10000
 # 0.1 - 0.01 - 0.001
 alpha = 0.1
@@ -21,7 +21,7 @@ lr= 0.00025
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
-make_env = lambda: Monitor(make_atari_deepmind('SpaceInvaders-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
+make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 
 for ex in range(n_experiments):
@@ -39,7 +39,7 @@ for ex in range(n_experiments):
         # Collect data
         data = []
         states1, _ = env.reset() 
-        actions1 = agent.choose_action(states1)
+        actions1 = [1,1,1,1]
         t = 1
         while t < max_steps:
 
@@ -75,11 +75,12 @@ for ex in range(n_experiments):
             lenght_mean = 0
         else: 
             rew_mean = np.mean([e['r'] for e in ep_infos])
+            print([e['r'] for e in ep_infos])
             lenght_mean = np.mean([e['l'] for e in ep_infos])
     
-        total_reward_matrix[ex, episode_count] = rew_mean
+        total_reward_matrix[ex, episode_count] = ep_infos[-1]['r']
         total_cost_matrix[ex,episode_count] = np.mean(cost)
-        total_lenght_matrix[ex,episode_count] = lenght_mean
+        total_lenght_matrix[ex,episode_count] = ep_infos[-1]['l']
 
         print()
         print('Experiment: ', ex+1, '/', n_experiments)
@@ -90,8 +91,15 @@ env.close()
 
 mean_rewards = np.mean(total_reward_matrix, axis=0)
 std_rewards = np.std(total_reward_matrix, axis=0) / np.sqrt(total_reward_matrix.shape[0])
+
+print(total_reward_matrix)
+
 mean_costs = np.mean(total_cost_matrix, axis=0)
 std_costs = np.std(total_cost_matrix, axis=0) / np.sqrt(total_cost_matrix.shape[0])
+
+print(mean_rewards)
+print()
+print(std_rewards)
 mean_lengths = np.mean(total_lenght_matrix, axis=0)
 std_lengths = np.std(total_lenght_matrix, axis=0) / np.sqrt(total_lenght_matrix.shape[0])
 
