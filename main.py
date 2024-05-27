@@ -10,19 +10,18 @@ from wrappers import make_atari_deepmind
 # Defining all the required parameters
 n_experiments = 5
 total_episodes = 1000 #5000
-# 10 000 - 1 000 - 100
-max_steps = 1000
+max_steps = 10000
 # 0.1 - 0.01 - 0.001
-alpha = 0.01
+alpha = 0.1
 # 0.9 - 0.95 - 0.99
-gamma = 0.9
+gamma = 0.99
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.001
+lr= 0.00025
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
-make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps, scale_values=True), None, allow_early_resets = True)
+make_env = lambda: Monitor(make_atari_deepmind('SpaceInvaders-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 
 for ex in range(n_experiments):
@@ -69,7 +68,7 @@ for ex in range(n_experiments):
             
             # Call the update function with the grouped data
             c = agent.update(states, actions, rewards, next_states, next_actions)
-            cost.append(c.detach().numpy())
+            cost.append(c.cpu().detach().numpy())
 
         if len(ep_infos) == 0:
             rew_mean = 0
