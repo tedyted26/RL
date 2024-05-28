@@ -1,3 +1,4 @@
+from collections import deque
 import itertools
 import numpy as np
 
@@ -10,7 +11,7 @@ from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
 n_experiments = 1
-total_episodes = 50000 #5000
+total_episodes = 500000 #5000
 max_steps = 1000
 n_environment_interactions = 100
 # 0.1 - 0.01 - 0.001
@@ -19,7 +20,7 @@ alpha = 0.1
 gamma = 0.99
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.00025
+lr= 0.01
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -31,7 +32,7 @@ for ex in range(n_experiments):
     agent = Agent(network, alpha, gamma, lr)
 
     cost = []
-    ep_infos = []  
+    ep_infos = deque([], 100)  
     ep_count = 0
 
     total_reward_matrix = np.zeros((n_experiments, total_episodes))
@@ -91,15 +92,8 @@ env.close()
 
 mean_rewards = np.mean(total_reward_matrix, axis=0)
 std_rewards = np.std(total_reward_matrix, axis=0) / np.sqrt(total_reward_matrix.shape[0])
-
-print(total_reward_matrix)
-
 mean_costs = np.mean(total_cost_matrix, axis=0)
 std_costs = np.std(total_cost_matrix, axis=0) / np.sqrt(total_cost_matrix.shape[0])
-
-print(mean_rewards)
-print()
-print(std_rewards)
 mean_lengths = np.mean(total_lenght_matrix, axis=0)
 std_lengths = np.std(total_lenght_matrix, axis=0) / np.sqrt(total_lenght_matrix.shape[0])
 

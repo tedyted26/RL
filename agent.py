@@ -52,7 +52,7 @@ class Agent():
 		# Q(S,A) for all 4 env, all actions
 		q_pred_all = self.Q(prev_states)
 		# Q(S,A) for all 4 env, only prev_actions
-		q_pred = T.gather(q_pred_all, dim=1, index=prev_actions.unsqueeze(0))
+		q_pred = T.gather(q_pred_all, dim=1, index=prev_actions.unsqueeze(1)).squeeze()
 
 		# Q(S_,A_) for all 4 env, all actions
 		q_next_all = self.Q(next_states)
@@ -61,14 +61,8 @@ class Agent():
 			actions_softmax = F.softmax(q_next_all, dim=-1)
 
 		# Expected Q value based on probabilities
-		expected_q_next_all = []
-		for environment in range(len(q_next_all)):
-			expected_q_next = 0
-			for a in range(len(q_next_all[environment])):
-				expected_q_next += actions_softmax[environment][a] * q_next_all[environment][a]
-			expected_q_next_all.append(expected_q_next)
-
-		q_target = rewards + self.gamma * T.stack(expected_q_next_all)
+		expected_q_next_all = T.sum(actions_softmax * q_next_all, dim=1)
+		q_target = rewards + self.gamma * expected_q_next_all
 		
 		mse_loss = self.mse_loss(q_target.unsqueeze(0), q_pred).to(self.device)
 		kl_loss = self.kl_loss(self.Q).to(self.device)

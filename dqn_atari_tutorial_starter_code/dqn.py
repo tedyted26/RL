@@ -7,6 +7,10 @@ import itertools
 import numpy as np
 import random
 
+from baselines_wrappers.dummy_vec_env import DummyVecEnv
+from baselines_wrappers.monitor import Monitor
+from pytorch_wrappers import BatchedPytorchFrameStack, OldApiEnvWrapper, PytorchLazyFrames, make_atari_deepmind
+
 GAMMA=0.99
 BATCH_SIZE=32
 BUFFER_SIZE=50000
@@ -17,24 +21,24 @@ EPSILON_DECAY=10000
 TARGET_UPDATE_FREQ = 1000
 NUM_ENVS=4
 
-def nature_cnn(observation_space, depths=[32, 64, 64, final_layer=512]):
+def nature_cnn(observation_space, depths=[32, 64, 64], final_layer=512):
     n_input_channels = observation_space.shape[0]
 
     cnn = nn.Sequential(
-        nn.Conv2d(n_input_channels, depths[0], kernel_size = 8, stride=4)
-        nn.ReLU()
-        nn.Conv2d(depths[0], depths[1], kernel_size = 4, stride=2)
-        nn.ReLU()
-        nn.Conv2d(depths[1], depths[2], kernel_size = 3, stride=1)
-        nn.ReLU()
+        nn.Conv2d(n_input_channels, depths[0], kernel_size = 8, stride=4),
+        nn.ReLU(),
+        nn.Conv2d(depths[0], depths[1], kernel_size = 4, stride=2),
+        nn.ReLU(),
+        nn.Conv2d(depths[1], depths[2], kernel_size = 3, stride=1),
+        nn.ReLU(),
         nn.Flatten()
     )
 
     # Compute shape by doing one forward pass
-    with T.no_grad():
-        n_flatten = cnn(T.as_tensor(observation_space.sample()[None]).float()).shape[1]
+    with torch.no_grad():
+        n_flatten = cnn(torch.as_tensor(observation_space.sample()[None]).float()).shape[1]
 
-    out = nn.Sequential(cnn, nn.Linear(n_flatten, final_layer),nn_ReLu())
+    out = nn.Sequential(cnn, nn.Linear(n_flatten, final_layer), nn.ReLU())
 
     return out
 
@@ -120,7 +124,7 @@ optimizer = torch.optim.Adam(online_net.parameters(), lr=5e-4)
 # Initialize replay buffer
 obses = env.reset()
 for _ in range(MIN_REPLAY_SIZE):
-    action = [env.action_space.sample() for _ in range(NUM_ENVS)]
+    actions = [env.action_space.sample() for _ in range(NUM_ENVS)]
 
     new_obses, rews, dones, _ = env.step(action)
 
@@ -150,7 +154,7 @@ for step in itertools.count():
         replay_buffer.append(transition)
 
         if done:
-            ep_infos_buffer.append(info['episode'])
+            ep_infos.append(info['episode'])
             episode_count +=1
 
     obses = new_obses
@@ -172,8 +176,8 @@ for step in itertools.count():
 
     # Logging
     if step % 1000 == 0:
-        rew_mean = np.mean([e['r'] for e in epinfos_buffer]) or 0
-        len_mean = np.mean([e['l'] for e in epinfos_buffer]) or 0
+        rew_mean = np.mean([e['r'] for e in ep_infos]) or 0
+        len_mean = np.mean([e['l'] for e in ep_infos]) or 0
         print()
         print('Step:', step)
         print('Avg Rew:', rew_mean)
