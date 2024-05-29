@@ -10,10 +10,12 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-n_experiments = 1
-total_episodes = 500000 #5000
 max_steps = 1000
+n_experiments = 1
 n_environment_interactions = 100
+LOGGING_FREQ = 100
+env = 'Breakout'
+
 # 0.1 - 0.01 - 0.001
 alpha = 0.1
 # 0.9 - 0.95 - 0.99
@@ -23,8 +25,9 @@ gamma = 0.99
 lr= 0.01
 NUM_ENVS = 4 
 
+
 # Using the gym library to create the environment
-make_env = lambda: Monitor(make_atari_deepmind('Breakout-v0', max_episode_steps=max_steps), None, allow_early_resets = True)
+make_env = lambda: Monitor(make_atari_deepmind(env+'-v0'), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
 
 for ex in range(n_experiments):
@@ -34,20 +37,21 @@ for ex in range(n_experiments):
     cost = []
     ep_infos = deque([], 100)  
     ep_count = 0
+    data = []
 
-    total_reward_matrix = np.zeros((n_experiments, total_episodes))
-    total_cost_matrix = np.zeros((n_experiments, total_episodes))
-    total_lenght_matrix = np.zeros((n_experiments, total_episodes))
+    states1, _ = env.reset()
 
-    while ep_count < total_episodes:
-        states1, _ = env.reset()
-        actions1 = [1, 1, 1, 1]
-        ep_done = False
-        data = []
+    if env == 'Breakout':
+        actions1 = [1, 1, 1, 1] # If its the first ever action of breakout, fire the ball
+    else:
+        actions1 = agent.choose_action(states1)
 
-        while not ep_done:
+    while steps < max_steps: 
+        
+        if len(data) < n_environment_interactions:
             # Collect data    
-            states2, rewards, dones, _, infos = env.step(actions1)  
+            states2, rewards, dones, _, infos = env.step(actions1) 
+            steps =+ 1 
             actions2 = agent.choose_action(states2)
             for state, action, reward, done, state2, action2, info in zip(states1, actions1, rewards, dones, states2, actions2, infos):       
                 data.append((state, action, reward, state2, action2))
@@ -56,70 +60,57 @@ for ex in range(n_experiments):
                     print('-------done', ep_count)
                     ep_infos.append(info['episode'])
                     ep_done = done
-                    if ep_count >= total_episodes:
-                        break
                     ep_count += 1
 
             states1 = states2 
             actions1 = actions2          
-                    
-        # Train
-        # Loop through data with a step size of 4
-        for r in range(0, len(data), 4):
-            # Extract data for each iteration
-            group = data[r:r+4]
-            states, actions, rewards, next_states, next_actions = zip(*group)
-            
-            # Call the update function with the grouped data
-            c = agent.update(states, actions, rewards, next_states, next_actions)
-            cost.append(c.cpu().detach().numpy())
+        else:            
+            # Train
+            # Loop through data with a step size of 4
+            for r in range(0, len(data), 4):
+                # Extract data for each iteration
+                group = data[r:r+4]
+                states, actions, rewards, next_states, next_actions = zip(*group)
+                
+                # Call the update function with the grouped data
+                c = agent.update(states, actions, rewards, next_states, next_actions)
+                cost.append(c.cpu().detach().numpy())
 
         
-        rew_mean = np.mean([e['r'] for e in ep_infos])
-        print([e['r'] for e in ep_infos])
-        lenght_mean = np.mean([e['l'] for e in ep_infos])
+        # Logging
+        if step % LOGGING_FREQ == 0:
+            if len(ep_infos) == 0:
+                rew_mean = 0
+                len_mean = 0
+            else:
+                rew_mean = np.mean([e['r'] for e in ep_infos])
+                len_mean = np.mean([e['l'] for e in ep_infos])
 
-        total_reward_matrix[ex, ep_count-1] = ep_infos[-1]['r']
-        total_cost_matrix[ex,ep_count-1] = np.mean(cost)
-        total_lenght_matrix[ex,ep_count-1] = ep_infos[-1]['l']
+            evaluation_rewards.append(rew_mean)
+            training_steps.append(step)
 
-        print()
-        print('Experiment: ', ex+1, '/', n_experiments)
-        print('Episode: ', ep_count, 'with steps: ', ep_infos[-1]['l']) 
-        print('Reward mean total: ', rew_mean)   
+            print()
+            print('Step:', step)
+            print('Avg Rew:', rew_mean)
+            print('Avg Ep Len', len_mean)
+            print('Episodes', episode_count)
+            print('Experiment: ', ex)
+    
+    all_rewards.append(evaluation_rewards)
+    all_steps.append(training_steps)
 
-env.close()
+# Plotting the results
+plt.figure(figsize=(12, 8))
 
-mean_rewards = np.mean(total_reward_matrix, axis=0)
-std_rewards = np.std(total_reward_matrix, axis=0) / np.sqrt(total_reward_matrix.shape[0])
-mean_costs = np.mean(total_cost_matrix, axis=0)
-std_costs = np.std(total_cost_matrix, axis=0) / np.sqrt(total_cost_matrix.shape[0])
-mean_lengths = np.mean(total_lenght_matrix, axis=0)
-std_lengths = np.std(total_lenght_matrix, axis=0) / np.sqrt(total_lenght_matrix.shape[0])
+mean_rewards = np.mean(all_rewards, axis=0)
+std_rewards = np.std(all_rewards, axis=0) / np.sqrt(n_experiments)
 
-fig, axes = plt.subplots(3, 1, figsize=(10, 15))
+plt.plot(training_steps, mean_rewards, linewidth=1, label='Mean Reward')
+plt.fill_between(training_steps, mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
 
-axes[0].plot(range(total_episodes), mean_rewards, linewidth=1, label='Mean Reward')
-axes[0].fill_between(range(total_episodes), mean_rewards - std_rewards, mean_rewards + std_rewards, alpha=0.2)
-axes[0].set_xlabel('Episode')
-axes[0].set_ylabel('Mean Reward')
-axes[0].set_title('Mean Reward per Episode')
-axes[0].legend()
+plt.xlabel("Gradient-Descent Steps")
+plt.ylabel("Evaluation-Time Total Reward")
+plt.title("Evaluation-Time Total Reward vs Gradient-Descent Steps")
+plt.legend()
 
-axes[1].plot(range(total_episodes), mean_costs, linewidth=1, label='Mean Cost')
-axes[1].fill_between(range(total_episodes), mean_costs - std_costs, mean_costs + std_costs, alpha=0.2)
-axes[1].set_xlabel('Episode')
-axes[1].set_ylabel('Mean Cost')
-axes[1].set_title('Mean Cost per Episode')
-axes[1].legend()
-
-axes[2].plot(range(total_episodes), mean_lengths, linewidth=1, label='Mean Length (timesteps)')
-axes[2].fill_between(range(total_episodes), mean_lengths - std_lengths, mean_lengths + std_lengths, alpha=0.2)
-axes[2].set_xlabel('Episode')
-axes[2].set_ylabel('Mean Length')
-axes[2].set_title('Mean Length per Episode')
-axes[2].legend()
-
-plt.tight_layout()
-
-plt.savefig('results.png')
+plt.savefig('results_sarsa.png')

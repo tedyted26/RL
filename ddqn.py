@@ -91,11 +91,13 @@ class Network(nn.Module):
         new_obses_t = torch.as_tensor(new_obses, dtype=torch.float32)
 
         # Compute Targets
-        # targets = r + gamma * target q vals * (1 - dones)
-        target_q_values = target_net(new_obses_t)
-        max_target_q_values = target_q_values.max(dim=1, keepdim=True)[0]
+        targets_online_q_values = self(new_obses_t)
+        targets_online_best_q_indices = targets_online_q_values.argmax(dim=1, keepdim=True)
+        
+        targets_target_q_values = target_net(new_obses_t)
+        targets_selected_q_values = torch.gather(input=targets_target_q_values, dim=1, index=targets_online_best_q_indices)
 
-        targets = rews_t + GAMMA * (1 - dones_t) * max_target_q_values
+        targets = rews_t + GAMMA * (1 - dones_t) * targets_selected_q_values
 
         # Compute Loss
         q_values = self(obses_t)
