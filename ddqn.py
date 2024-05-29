@@ -227,4 +227,4 @@ plt.ylabel("Evaluation-Time Total Reward")
 plt.title("Evaluation-Time Total Reward vs Gradient-Descent Steps")
 plt.legend()
 
-plt.savefig('results_dqn.png')
+plt.savefig('results_ddqn.png')
