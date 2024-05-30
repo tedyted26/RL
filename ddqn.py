@@ -108,7 +108,7 @@ class Network(nn.Module):
         return loss
 
 
-make_env = lambda: Monitor(make_atari_deepmind('SpaceInvaders-v0'), None, allow_early_resets=True)
+make_env = lambda: Monitor(make_atari_deepmind('Tennis-v0'), None, allow_early_resets=True)
 vec_env = DummyVecEnv([make_env for _ in range(NUM_ENVS)])
 
 env = BatchedPytorchFrameStack(vec_env, k=4)
@@ -227,4 +227,4 @@ plt.ylabel("Evaluation-Time Total Reward")
 plt.title("Evaluation-Time Total Reward vs Gradient-Descent Steps")
 plt.legend()
 
-plt.savefig('results_ddqn_spaceinvaders_100k_x1.png')
+plt.savefig('results_ddqn_tennis_100k_x1.png')
