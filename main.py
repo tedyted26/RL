@@ -25,10 +25,12 @@ gamma = 0.99
 lr= 0.01
 NUM_ENVS = 4 
 
-
 # Using the gym library to create the environment
 make_env = lambda: Monitor(make_atari_deepmind(env+'-v0'), None, allow_early_resets = True)
 env = DummyVecEnv([make_env for _ in range(NUM_ENVS)]) # Sequential
+
+all_rewards = []
+all_steps = []
 
 for ex in range(n_experiments):
     network = BNN(env.observation_space, env.action_space.n)
@@ -39,6 +41,12 @@ for ex in range(n_experiments):
     ep_count = 0
     data = []
 
+    evaluation_rewards = []
+    training_steps = []
+    lenghts_episode = []
+
+    steps = 0
+
     states1, _ = env.reset()
 
     if env == 'Breakout':
@@ -46,25 +54,9 @@ for ex in range(n_experiments):
     else:
         actions1 = agent.choose_action(states1)
 
-    while steps < max_steps: 
+    for step in range(max_steps): 
         
-        if len(data) < n_environment_interactions:
-            # Collect data    
-            states2, rewards, dones, _, infos = env.step(actions1) 
-            steps =+ 1 
-            actions2 = agent.choose_action(states2)
-            for state, action, reward, done, state2, action2, info in zip(states1, actions1, rewards, dones, states2, actions2, infos):       
-                data.append((state, action, reward, state2, action2))
-                
-                if done:
-                    print('-------done', ep_count)
-                    ep_infos.append(info['episode'])
-                    ep_done = done
-                    ep_count += 1
-
-            states1 = states2 
-            actions1 = actions2          
-        else:            
+        if len(data) >= n_environment_interactions:            
             # Train
             # Loop through data with a step size of 4
             for r in range(0, len(data), 4):
@@ -75,8 +67,24 @@ for ex in range(n_experiments):
                 # Call the update function with the grouped data
                 c = agent.update(states, actions, rewards, next_states, next_actions)
                 cost.append(c.cpu().detach().numpy())
+            data = []
 
-        
+        # Collect data 
+        states2, rewards, dones, _, infos = env.step(actions1) 
+            
+        actions2 = agent.choose_action(states2)
+        for state, action, reward, done, state2, action2, info in zip(states1, actions1, rewards, dones, states2, actions2, infos):       
+            data.append((state, action, reward, state2, action2))
+            
+            if done:
+                ep_infos.append(info['episode'])
+                ep_count += 1
+
+        states1 = states2 
+        actions1 = actions2 
+
+        step += 1     
+
         # Logging
         if step % LOGGING_FREQ == 0:
             if len(ep_infos) == 0:
@@ -93,7 +101,7 @@ for ex in range(n_experiments):
             print('Step:', step)
             print('Avg Rew:', rew_mean)
             print('Avg Ep Len', len_mean)
-            print('Episodes', episode_count)
+            print('Episodes', ep_count)
             print('Experiment: ', ex)
     
     all_rewards.append(evaluation_rewards)

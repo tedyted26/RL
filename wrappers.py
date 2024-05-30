@@ -13,8 +13,6 @@ def make_atari_deepmind(env_id, max_episode_steps=None, scale_values=False, clip
     env = gym.make(env_id)
     env = NoopResetEnv(env, noop_max=30)
 
-    print(env.spec)
-
     if 'NoFrameskip' in env.spec.id:
         print("im noframeskip")
         env = MaxAndSkipEnv(env, skip=4)
