@@ -64,7 +64,7 @@ class Agent():
 		expected_q_next_all = T.sum(actions_softmax * q_next_all, dim=1)
 		q_target = rewards + self.gamma * expected_q_next_all
 		
-		mse_loss = self.mse_loss(q_target.unsqueeze(0), q_pred).to(self.device)
+		mse_loss = self.mse_loss(q_target, q_pred).to(self.device)
 		kl_loss = self.kl_loss(self.Q).to(self.device)
 		cost = mse_loss + self.kl_weight*kl_loss
 
