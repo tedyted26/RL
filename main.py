@@ -10,19 +10,19 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-max_steps = 1000
-n_experiments = 1
+max_steps = 30000
+n_experiments = 5
 n_environment_interactions = 100
-LOGGING_FREQ = 100
+LOGGING_FREQ = 1000
 env = 'Breakout'
 
 # 0.1 - 0.01 - 0.001
 alpha = 0.1
 # 0.9 - 0.95 - 0.99
-gamma = 0.99
+gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.01
+lr= 0.001
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -81,9 +81,7 @@ for ex in range(n_experiments):
                 ep_count += 1
 
         states1 = states2 
-        actions1 = actions2 
-
-        step += 1     
+        actions1 = actions2     
 
         # Logging
         if step % LOGGING_FREQ == 0:
@@ -121,4 +119,4 @@ plt.ylabel("Evaluation-Time Total Reward")
 plt.title("Evaluation-Time Total Reward vs Gradient-Descent Steps")
 plt.legend()
 
-plt.savefig('results_sarsa.png')
+plt.savefig(f'results_sarsa_a{alpha}_g{gamma}_lr{lr}.png')
