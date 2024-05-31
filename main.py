@@ -10,9 +10,9 @@ from nn import BNN
 from wrappers import make_atari_deepmind
 
 # Defining all the required parameters
-max_steps = 30000
+max_steps = 60000
 n_experiments = 5
-n_environment_interactions = 100
+n_environment_interactions = 1000
 LOGGING_FREQ = 1000
 env = 'Breakout'
 
@@ -22,7 +22,9 @@ alpha = 0.1
 gamma = 0.9
 # 80 mean at episode 8500 with 0.0001
 # 0.001 - 0.0001 - 0.00025
-lr= 0.001
+lr= 0.00025
+# 0.005 0.01 0.05
+kl_weight = 0.005
 NUM_ENVS = 4 
 
 # Using the gym library to create the environment
@@ -34,7 +36,7 @@ all_steps = []
 
 for ex in range(n_experiments):
     network = BNN(env.observation_space, env.action_space.n)
-    agent = Agent(network, alpha, gamma, lr)
+    agent = Agent(network, alpha, gamma, lr, kl_weight)
 
     cost = []
     ep_infos = deque([], 100)  
