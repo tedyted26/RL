@@ -119,4 +119,4 @@ plt.ylabel("Evaluation-Time Total Reward")
 plt.title("Evaluation-Time Total Reward vs Gradient-Descent Steps")
 plt.legend()
 
-plt.savefig(f'results_sarsa_breakout_100k_x1.png')
+plt.savefig(f'results_sarsa_breakout_500k_x1.png')
